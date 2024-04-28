@@ -11,8 +11,10 @@ const tabs = ref([
 ]);
 
 const canvas = ref(null);
+const hasPicture = ref(false);
 
 const updateFile = e => {
+    hasPicture.value = true;
     const input = e.target;
     const file = input.files[0];
     const image = new Image();
@@ -32,6 +34,11 @@ const updateFile = e => {
     };
 };
 
+const skeletonize = () => {
+    const context = canvas.value.getContext("2d");
+    const data = canvas.value.getImageData(0, 0, context.canvas.width, context.canvas.height);
+    console.log(data);
+};
 </script>
 
 <template>
@@ -42,8 +49,9 @@ const updateFile = e => {
             </template>
         </Vuuri>
         <div class="flex justify-center items-center bg-base w-full h-[95%]">
-            <input class="w-4/5 h-4/5 opacity-0 absolute" accept="image/png, image/jpeg" type="file" @change="updateFile">
-            <canvas ref="canvas" class="rounded border-outline border-2"></canvas>
+            <input class="w-4/5 h-4/5 opacity-0 absolute" accept="image/png, image/jpeg" type="file" @change="updateFile" @click.prevent>
+            <canvas ref="canvas" :class="[hasPicture ? 'rounded border-outline border-2' : '', 'max-w-[50vw] max-h-[50vh]']"></canvas>
+            <button @click="skeletonize()">Skeletonize</button>
         </div>
     </div>
 </template>
