@@ -1,3 +1,6 @@
+//@ts-ignore
+import * as thinning_wasm from "@/lib/wasm/thinning.wasm";
+
 type Image = [number, number, number, number][][];
 type BinaryImage = number[][];
 
@@ -99,16 +102,28 @@ export function _thinning_js(im: BinaryImage) {
 }
 
 export async function thinning(im: BinaryImage) {
-    const code = await import('@/lib/wasm/thinning.wasm?raw');
-    // TODO: Execute WASM.
+    const [image_width, image_height] = [im[0].length, im.length];
+    im.forEach((row, y) =>
+        row.forEach((pixel, x) => 
+            thinning_wasm.set_pixel(image_width, x, y, pixel)
+        )
+    );
+    thinning_wasm.thinning_zs(image_width, image_height);
+    thinning_wasm.corner_fixing(image_width, image_height);
+    return im.map((row, y) =>
+        row.map((_, x) => 
+            thinning_wasm.get_pixel(image_width, x, y)
+        )
+    );
+
 }
 
-export function skeletonize(im: Uint8ClampedArray, width: number, height: number) {
+export async function skeletonize(im: Uint8ClampedArray, width: number, height: number) {
     const image = reshape_bytes(im, width, height);
     const flatten = bitwise_not(to_binary_image(image));
     
-    // const thinned = thinning(flatten);
-    // console.log(thinned);
+    const thinned = bitwise_not(await thinning(flatten));
+    console.log(thinned);
     // console.log(flatten[181][60], flatten[60][181]);
 }
 

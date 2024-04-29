@@ -44,6 +44,11 @@ const processImage = () => {
 };
 </script>
 
+<style scoped>
+
+</style>
+
+
 <template>
     <div class="flex flex-col justify-between w-4/5 h-[90vh]">
         <Vuuri v-model="tabs" drag-enabled>
