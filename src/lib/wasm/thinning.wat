@@ -335,11 +335,68 @@
     end
   )
 
+  ;; x is high 2 bytes, y is low 2 bytes
+  (func $closest_black_pixel (param $x i32) (param $y i32) (param $w i32) (param $h i32) (result i64)
+    (local $sum i32)
+    (local $dx i32)
+    (local $dy i32)
+    (local $curr_x i32)
+    (local $curr_y i32)
+    (local $signed i32)
+    (local $signed_a i32)
+    (local $signed_b i32)
+    (local $curr_pos i64)
+
+    (local.set $sum (i32.const 0))
+    (local.set $curr_pos (i64.const 0))
+    loop $l
+      (local.set $dx (i32.const 0))
+      ;; for (dx = 0; dx <= sum; dx++)
+      loop $l2
+        (local.set $dy (i32.sub (local.get $sum) (local.get $dx)))
+
+        (local.set $signed (i32.const 0))
+        loop $l3
+          (if (i32.and (local.get $signed) (i32.const 2))
+            (then (local.set $signed_a (i32.const 1)))
+            (else (local.set $signed_a (i32.const -1)))
+          )
+          (if (i32.and (local.get $signed) (i32.const 1))
+            (then (local.set $signed_a (i32.const 1)))
+            (else (local.set $signed_a (i32.const -1)))
+          )
+
+          (local.set $curr_x (i32.add (local.get $x) (i32.mul (local.get $signed_a) (local.get $dx))))
+          (local.set $curr_y (i32.add (local.get $y) (i32.mul (local.get $signed_b) (local.get $dy))))
+          (if (call $get_pixel (local.get $w) (local.get $curr_x) (local.get $curr_y))
+            (then
+              (local.set $curr_pos (i64.add
+                (i64.shl (i64.extend_i32_s (local.get $curr_x)) (i64.const 32))
+                (i64.extend_i32_s (local.get $curr_y))
+              ))
+            )
+          )
+
+          (local.set $signed (i32.add (local.get $signed) (i32.const 1)))
+          (br_if $l3 (i32.lt_u (local.get $signed) (i32.const 4)))
+        end
+
+        (local.set $dx (i32.add (local.get $dx) (i32.const 1)))
+        (br_if $l2 (i32.le_u (local.get $dx) (local.get $sum)))
+      end
+
+      (local.set $sum (i32.add (local.get $sum) (i32.const 1)))
+      (br_if $l (i32.wrap_i64 (local.get $curr_pos)))
+    end
+    (local.get $curr_pos)
+  )
+
   ;; exported API's
   (export "thinning_zs_iteration" (func $thinning_zs_iteration))
   (export "thinning_zs" (func $thinning_zs))
   (export "get_pixel"   (func $get_pixel))
   (export "set_pixel"   (func $set_pixel))
   (export "corner_fixing" (func $corner_fixing))
+  (export "closest_black_pixel" (func $closest_black_pixel))
   (export "mem"         (memory $mem))
 )
