@@ -1,15 +1,23 @@
 <script setup lang="ts">
 import Draggable from './RobotMap/Draggable.vue';
 import { skeletonize, get_closest_black_pixel } from '@/lib/imageproc';
-import { ref } from 'vue';
+import { ref, watchEffect } from 'vue';
 import { clamp } from '@vueuse/core';
-import { useElementBounding, type UseElementBoundingReturn } from '@vueuse/core';
+import { useElementBounding } from '@vueuse/core';
+import { AStarFinder } from 'astar-typescript';
+
+const map_canvas = ref(document.createElement('canvas'));
+const path_canvas = ref(document.createElement('canvas'));
 
 const canvas = ref(null as null | HTMLCanvasElement);
+
 const canvas_bounds = ref(useElementBounding(canvas));
 const hasPicture = ref(false);
 const start = ref([0, 0]);
 const end = ref([0, 0]);
+
+const width = ref(0);
+const height = ref(0);
 
 const updateFile = (e: Event) => {
     hasPicture.value = true;
@@ -17,7 +25,7 @@ const updateFile = (e: Event) => {
     const file = input.files?.[0];
     const image = new Image();
     const reader = new FileReader();
-    const context = canvas?.value?.getContext("2d");
+    const context = map_canvas?.value?.getContext("2d", { willReadFrequently: true });
     reader.readAsDataURL(file!);
     reader.onload = e => {
         if (e.target?.readyState == FileReader.DONE) {
@@ -25,6 +33,8 @@ const updateFile = (e: Event) => {
             image.onload = () => {
                 context!.canvas.width = image.width;
                 context!.canvas.height = image.height;
+                width.value = image.width;
+                height.value = image.height;
                 context!.drawImage(image, 0, 0);
             }
         }
@@ -32,35 +42,57 @@ const updateFile = (e: Event) => {
 };
 
 const processImage = async () => {
-    const context = canvas?.value?.getContext("2d");
+    const context = map_canvas?.value?.getContext("2d", { willReadFrequently: true });
     const empty_image = new ImageData(new Uint8ClampedArray([0, 0, 0, 0]), 1, 1);
     const { data, width, height } = context?.getImageData(0, 0, context.canvas.width, context.canvas.height) ?? empty_image;
     const thinned_image = await skeletonize(data, width, height);
-    thinned_image.forEach((row, y) => row.forEach((pixel, x) => {
-        context?.putImageData(new ImageData(new Uint8ClampedArray([pixel * 255, pixel * 255, pixel * 255, 255]), 1, 1), x, y)
-    }))
-    console.log("THINNED")
-    const start_pos = await get_closest_black_pixel(width, height, Math.round(start.value[0]), Math.round(start.value[1]));
-    const start_x = start_pos >> 32n;
-    const start_y = start_pos & 0xFFFFFFFFn;
-    console.log(start_x, start_y, start.value);
+    // thinned_image.forEach((row, y) => row.forEach((pixel, x) => {
+    //     context?.putImageData(new ImageData(new Uint8ClampedArray([pixel * 255, pixel * 255, pixel * 255, 255]), 1, 1), x, y)
+    // }))
+    // console.log("THINNED")
+    const start_pos = await get_closest_black_pixel(thinned_image, Math.round(start.value[0]), Math.round(start.value[1]));
+    const end_pos = await get_closest_black_pixel(thinned_image, Math.round(end.value[0]), Math.round(end.value[1]));
+
+    const astar_instance = new AStarFinder({
+        grid: {
+            matrix: thinned_image
+        },
+        heuristic: "Manhattan"
+    });
+    const path = astar_instance.findPath({x: start_pos[0], y: start_pos[1]}, {x: end_pos[0], y: end_pos[1]});
+    console.log(path);
+
+    
+    
 
 };
 
 const updateStart = (pos: [number, number]) => {
     const { left, right, top, bottom, width, height } = canvas.value?.getBoundingClientRect() ?? new DOMRect();
-    const ctx = canvas.value?.getContext("2d");
+    const ctx = map_canvas.value?.getContext("2d", { willReadFrequently: true });
     const clamped_x = clamp(pos[0], left, right) - left;
     const clamped_y = clamp(pos[1], top, bottom) - top;
     start.value = [clamped_x / width * ctx!.canvas.width, clamped_y / height * ctx!.canvas.height];
+    console.log(start.value)
 };
 
 const updateEnd = (pos: [number, number]) => {
-    const { left, right, top, bottom } = canvas.value?.getBoundingClientRect() ?? new DOMRect();
+    const { left, right, top, bottom, width, height } = canvas.value?.getBoundingClientRect() ?? new DOMRect();
+    const ctx = map_canvas.value?.getContext("2d", { willReadFrequently: true });
     const clamped_x = clamp(pos[0], left, right) - left;
     const clamped_y = clamp(pos[1], top, bottom) - top;
-    end.value = [clamped_x, clamped_y];
+    end.value = [clamped_x / width * ctx!.canvas.width, clamped_y / height * ctx!.canvas.height];
+    console.log(end.value)
 };
+
+watchEffect(() => {
+    const ctx = canvas.value?.getContext("2d");
+    if (!ctx) return;
+    ctx.canvas.width = width.value;
+    ctx.canvas.height = height.value;
+    ctx?.drawImage(map_canvas.value, 0, 0);
+    ctx?.drawImage(path_canvas.value, 0, 0);
+});
 
 </script>
 

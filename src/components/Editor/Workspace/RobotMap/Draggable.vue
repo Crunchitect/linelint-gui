@@ -33,8 +33,9 @@
     });
 
     const update_pos = (e: OnDragEnd) => {
-        const x = e.clientX;
-        const y = e.clientY;
+        const bounds = movint.value?.getBoundingClientRect() ?? new DOMRect();
+        const x = bounds.left + (-(props.x_offset_percentage ?? -50) / 100 * bounds.width);
+        const y = bounds.top + (-(props.x_offset_percentage ?? -50) / 100 * bounds.height);
         emit('update', [x, y]);
     };
 

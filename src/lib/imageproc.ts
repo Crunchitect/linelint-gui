@@ -1,8 +1,6 @@
 //@ts-ignore
-import * as thinning_wasm from "@/lib/wasm/thinning.wasm";
-
-type Image = [number, number, number, number][][];
-type BinaryImage = number[][];
+import * as thinning_wasm from "./wasm/thinning.wasm";
+import type { Image, BinaryImage } from '@/lib/types';
 
 export function reshape_bytes(im: Uint8ClampedArray, width: number, height: number) {
     const image = [] as Image;
@@ -118,8 +116,18 @@ export async function thinning(im: BinaryImage) {
 
 }
 
-export async function get_closest_black_pixel(w: number, h: number, x: number, y: number) {
-    return <bigint>(await thinning_wasm.closest_black_pixel(x, y, w, h));
+export async function get_closest_black_pixel(im: BinaryImage, x: number, y: number) {
+    let sum = 0;
+    while (true) {
+        for (let dx = 0; dx <= sum; dx++) {
+            let dy = sum - dx;
+            for (const sign of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+                if (im[y + dy * sign[1]][x + dx * sign[0]] == 0)
+                    return [x + dx * sign[0], y + dy * sign[1]];
+            }
+        }
+        sum++;
+    }
 }
 
 export async function skeletonize(im: Uint8ClampedArray, width: number, height: number) {
@@ -127,7 +135,7 @@ export async function skeletonize(im: Uint8ClampedArray, width: number, height: 
     const flatten = bitwise_not(to_binary_image(image));
     
     const thinned = bitwise_not(await thinning(flatten));
-    console.log(thinned);
+    // console.log(thinned);
 
     return thinned;
     

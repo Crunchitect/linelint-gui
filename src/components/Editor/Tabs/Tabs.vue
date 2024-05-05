@@ -6,7 +6,7 @@
     import { Tabs } from '@/lib/types';
     
     import { ref } from 'vue';
-    import { filterMutate } from '@/lib/pollyfill';
+    import { filterMutate } from '@/lib/polyfill';
 
     const tabs = ref([
         { id: Math.random(), type: Tabs.Map, name: "Map", icon: "map" },
@@ -23,7 +23,7 @@
     };
 
     defineEmits({
-        select: (type: Tabs) => {}
+        select: (type: number) => {}
     })
 
     const newtab = ref(null as null | HTMLDialogElement);
@@ -38,7 +38,7 @@
                          :id="tab.id"
                          :type="tab.type"
                          @close="id => filterMutate(tabs, tab => tab.id !== id)"
-                         @select="type => $emit('select', type as Tabs)"
+                         @select="type => $emit('select', type)"
                     >{{ tab.name }}</Tab>
                 </template>
             </Vuuri>
