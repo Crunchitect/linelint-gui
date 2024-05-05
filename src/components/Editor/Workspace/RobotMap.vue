@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import Draggable from './RobotMap/Draggable.vue';
 import { skeletonize, get_closest_black_pixel } from '@/lib/imageproc';
-import { ref, watchEffect } from 'vue';
+import { ref, watchEffect, onUpdated } from 'vue';
 import { clamp } from '@vueuse/core';
 import { useElementBounding } from '@vueuse/core';
 import { AStarFinder } from 'astar-typescript';
+import { heuristic } from '@/config/pathfind';
+import type { AStarPath, BinaryImage } from '@/lib/types';
+
 
 const map_canvas = ref(document.createElement('canvas'));
 const path_canvas = ref(document.createElement('canvas'));
@@ -41,6 +44,31 @@ const updateFile = (e: Event) => {
     };
 };
 
+const findPath = async (thinned_image: BinaryImage) => {
+    const start_pos = await get_closest_black_pixel(thinned_image, Math.round(start.value[0]), Math.round(start.value[1]));
+    const end_pos = await get_closest_black_pixel(thinned_image, Math.round(end.value[0]), Math.round(end.value[1]));
+
+    const astar_instance = new AStarFinder({
+        grid: {
+            matrix: thinned_image
+        },
+        heuristic: heuristic.value
+    });
+    const path = astar_instance.findPath({x: start_pos[0], y: start_pos[1]}, {x: end_pos[0], y: end_pos[1]});
+    return path;
+};
+
+const drawPath = (path: AStarPath) => {
+    const ctx = path_canvas.value.getContext("2d")!;
+    ctx.canvas.width = width.value;
+    ctx.canvas.height = height.value;
+
+    ctx.fillStyle = "#0ea5e9";
+    path.forEach(point => {
+        ctx.fillRect(point[0], point[1], 10, 10);
+    })
+};
+
 const processImage = async () => {
     const context = map_canvas?.value?.getContext("2d", { willReadFrequently: true });
     const empty_image = new ImageData(new Uint8ClampedArray([0, 0, 0, 0]), 1, 1);
@@ -50,21 +78,9 @@ const processImage = async () => {
     //     context?.putImageData(new ImageData(new Uint8ClampedArray([pixel * 255, pixel * 255, pixel * 255, 255]), 1, 1), x, y)
     // }))
     // console.log("THINNED")
-    const start_pos = await get_closest_black_pixel(thinned_image, Math.round(start.value[0]), Math.round(start.value[1]));
-    const end_pos = await get_closest_black_pixel(thinned_image, Math.round(end.value[0]), Math.round(end.value[1]));
-
-    const astar_instance = new AStarFinder({
-        grid: {
-            matrix: thinned_image
-        },
-        heuristic: "Manhattan"
-    });
-    const path = astar_instance.findPath({x: start_pos[0], y: start_pos[1]}, {x: end_pos[0], y: end_pos[1]});
-    console.log(path);
-
-    
-    
-
+    const path = await findPath(thinned_image);
+    drawPath(<AStarPath>path);
+    draw();
 };
 
 const updateStart = (pos: [number, number]) => {
@@ -73,7 +89,6 @@ const updateStart = (pos: [number, number]) => {
     const clamped_x = clamp(pos[0], left, right) - left;
     const clamped_y = clamp(pos[1], top, bottom) - top;
     start.value = [clamped_x / width * ctx!.canvas.width, clamped_y / height * ctx!.canvas.height];
-    console.log(start.value)
 };
 
 const updateEnd = (pos: [number, number]) => {
@@ -82,17 +97,19 @@ const updateEnd = (pos: [number, number]) => {
     const clamped_x = clamp(pos[0], left, right) - left;
     const clamped_y = clamp(pos[1], top, bottom) - top;
     end.value = [clamped_x / width * ctx!.canvas.width, clamped_y / height * ctx!.canvas.height];
-    console.log(end.value)
 };
 
-watchEffect(() => {
+const draw = () => {
     const ctx = canvas.value?.getContext("2d");
     if (!ctx) return;
     ctx.canvas.width = width.value;
     ctx.canvas.height = height.value;
     ctx?.drawImage(map_canvas.value, 0, 0);
     ctx?.drawImage(path_canvas.value, 0, 0);
-});
+};
+
+watchEffect(draw);
+onUpdated(draw);
 
 </script>
 

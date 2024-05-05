@@ -7,6 +7,7 @@
 
     import None from './None.vue';
     import RobotMap from './RobotMap.vue';
+    import Options from './Options.vue';
     import NotSupported from './NotSupported.vue';
 </script>
 
@@ -14,6 +15,7 @@
     <KeepAlive>
         <None v-if="workspace === Tabs.None" />
         <RobotMap v-else-if="workspace === Tabs.Map" />
+        <Options v-else-if="workspace === Tabs.Options"/>
         <NotSupported v-else />
     </KeepAlive>
 </template>

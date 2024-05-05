@@ -133,7 +133,6 @@ export async function get_closest_black_pixel(im: BinaryImage, x: number, y: num
 export async function skeletonize(im: Uint8ClampedArray, width: number, height: number) {
     const image = reshape_bytes(im, width, height);
     const flatten = bitwise_not(to_binary_image(image));
-    
     const thinned = bitwise_not(await thinning(flatten));
     // console.log(thinned);
 

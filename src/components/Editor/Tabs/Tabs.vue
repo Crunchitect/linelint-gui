@@ -52,6 +52,7 @@
             <div class="grid grid-cols-3 grid-rows-2 gap-1 w-[20vw]">
                 <button class="bg-base rounded" @click="create_new_tab(Tabs.Map, 'Map', 'map')">Map</button>
                 <button class="bg-base rounded" @click="create_new_tab(Tabs.Sensors, 'Sensors', 'screwdriver-wrench')">Sensors</button>
+                <button class="bg-base rounded" @click="create_new_tab(Tabs.Options, 'Options', 'gear')">Options</button>
             </div>
         </dialog>
     </div>

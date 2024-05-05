@@ -43,8 +43,10 @@
 </script>
 
 <template>
-    <span class="absolute top-0 left-0" ref="movint"><slot></slot></span>
-    <Moveable :target="movint" :draggable="true" :throttle-drag="1" :hide-default-lines="true" :origin="false"
-     @drag="drag_callback" @drag-end="update_pos"
-    />
+    <KeepAlive>
+        <span class="absolute top-0 left-0" ref="movint"><slot></slot></span>
+        <Moveable :target="movint" :draggable="true" :throttle-drag="1" :hide-default-lines="true" :origin="false"
+         @drag="drag_callback" @drag-end="update_pos"
+        />
+    </KeepAlive>
 </template>
