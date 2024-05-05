@@ -39,6 +39,7 @@ const processImage = async () => {
     thinned_image.forEach((row, y) => row.forEach((pixel, x) => {
         context?.putImageData(new ImageData(new Uint8ClampedArray([pixel * 255, pixel * 255, pixel * 255, 255]), 1, 1), x, y)
     }))
+    console.log("THINNED")
     const start_pos = await get_closest_black_pixel(width, height, Math.round(start.value[0]), Math.round(start.value[1]));
     const start_x = start_pos >> 32n;
     const start_y = start_pos & 0xFFFFFFFFn;
