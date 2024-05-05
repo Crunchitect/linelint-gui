@@ -17,7 +17,8 @@ module.exports = {
         outline: '#52525b',
         primary: 'black',
         secondary: '#78716c',
-        accent: '#0ea5e9'
+        accent: '#0ea5e9',
+        "accent-secondary": 'red'
       }
     })
   ],

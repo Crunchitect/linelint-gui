@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import Inspector from "@/components/Inspector.vue";    
-import Editor from "@/components/Editor.vue";    
+import Editor from "@/components/Editor/Editor.vue";  
 </script>
 
 

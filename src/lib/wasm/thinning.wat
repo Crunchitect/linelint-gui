@@ -233,11 +233,11 @@
     ;; pixel condition
     (local $ap i32)
 
-    ;; for (x = 1; x < w-1; x++)
-    (local.set $x (i32.const 1))
+    ;; for (x = 2; x < w-2; x++)
+    (local.set $x (i32.const 2))
     loop $loop_x
-      ;; for (y = 1; y < h-1; y++)
-      (local.set $y (i32.const 1))
+      ;; for (y = 2; y < h-2; y++)
+      (local.set $y (i32.const 2))
       loop $loop_y
         (local.set $p (call $get_pixel
           (local.get $w)
@@ -245,7 +245,7 @@
           (local.get $y)
         ))
         (
-          if (i32.eqz (local.get $p) (i32.const 1))
+          if (i32.eqz (local.get $p) (i32.const 0))
           (then 
             (local.set $dir (i32.const 0))
             ;; for (d = 0; d < 4; d++)
@@ -302,8 +302,10 @@
                 (local.get $y)
               ))
 
-              (local.set $ap (i32.and (i32.and (i32.and (local.get $p1) (local.get $p2)) (local.get $p3)) (local.get $p4)))
-              (if (i32.eqz (local.get $ap) (i32.const 1))
+              (local.set $ap (i32.and (local.get $p1) (local.get $p2)))
+              (local.set $ap (i32.and (local.get $ap) (local.get $p3)))
+              (local.set $ap (i32.and (local.get $ap) (local.get $p4)))
+              (if (local.get $ap)
                 (then
                   (call $set_pixel
                     (local.get $w)
@@ -322,73 +324,96 @@
 
               (local.set $dir (i32.add (local.get $dir) (i32.const 1)))
               (br_if $loop_dir (i32.lt_s (local.get $dir) (i32.const 4)))
-              drop
             end
           )
         )
         (local.set $y (i32.add (local.get $y) (i32.const 1)))
-        (br_if $loop_y (i32.lt_u (local.get $y) (i32.sub (local.get $h) (i32.const 1))))
+        (br_if $loop_y (i32.lt_u (local.get $y) (i32.sub (local.get $h) (i32.const 2))))
         drop
       end
       (local.set $x (i32.add (local.get $x) (i32.const 1)))
-      (br_if $loop_x (i32.lt_u (local.get $x) (i32.sub (local.get $w) (i32.const 1))))
+      (br_if $loop_x (i32.lt_u (local.get $x) (i32.sub (local.get $w) (i32.const 2))))
     end
   )
 
   ;; x is high 2 bytes, y is low 2 bytes
   (func $closest_black_pixel (param $x i32) (param $y i32) (param $w i32) (param $h i32) (result i64)
-    (local $sum i32)
-    (local $dx i32)
-    (local $dy i32)
-    (local $curr_x i32)
-    (local $curr_y i32)
-    (local $signed i32)
-    (local $signed_a i32)
-    (local $signed_b i32)
-    (local $curr_pos i64)
-
+    (local $sum i32) (local $dx i32) (local $dy i32) (local $p i32) (local $ret i64)
+    ;; while (1)
     (local.set $sum (i32.const 0))
-    (local.set $curr_pos (i64.const 0))
-    loop $l
+    (local.set $p (i32.const 0))
+    loop $l 
+      (br_if $l (i32.sub (i32.const 1) (local.get $p)))
+      ;; sum++
+      (local.set $sum (i32.add (local.get $sum) (i32.const 1)))
+      ;; for(dx = 0; dx <= sum; dx++)
       (local.set $dx (i32.const 0))
-      ;; for (dx = 0; dx <= sum; dx++)
-      loop $l2
+      loop $loop_dx
+        ;; dy = sum - dx
         (local.set $dy (i32.sub (local.get $sum) (local.get $dx)))
 
-        (local.set $signed (i32.const 0))
-        loop $l3
-          (if (i32.and (local.get $signed) (i32.const 2))
-            (then (local.set $signed_a (i32.const 1)))
-            (else (local.set $signed_a (i32.const -1)))
+        ;; iterate through all signs
+        ;; + +
+        (local.set $p (call $get_pixel
+          (local.get $w)
+          (i32.add (local.get $x) (local.get $dx))
+          (i32.add (local.get $y) (local.get $dy))
+        ))
+        (local.set $ret
+          (i64.add 
+            (i64.shl (i64.extend_i32_s (i32.add (local.get $x) (local.get $dx))) (i64.const 32))
+            (i64.extend_i32_s (i32.add (local.get $y) (local.get $dy)))
           )
-          (if (i32.and (local.get $signed) (i32.const 1))
-            (then (local.set $signed_a (i32.const 1)))
-            (else (local.set $signed_a (i32.const -1)))
-          )
+        )
+        (br_if $l (i32.sub (i32.const 1) (local.get $p)))
 
-          (local.set $curr_x (i32.add (local.get $x) (i32.mul (local.get $signed_a) (local.get $dx))))
-          (local.set $curr_y (i32.add (local.get $y) (i32.mul (local.get $signed_b) (local.get $dy))))
-          (if (call $get_pixel (local.get $w) (local.get $curr_x) (local.get $curr_y))
-            (then
-              (local.set $curr_pos (i64.add
-                (i64.shl (i64.extend_i32_s (local.get $curr_x)) (i64.const 32))
-                (i64.extend_i32_s (local.get $curr_y))
-              ))
-            )
+        ;; + -
+        (local.set $p (call $get_pixel
+          (local.get $w)
+          (i32.add (local.get $x) (local.get $dx))
+          (i32.sub (local.get $y) (local.get $dy))
+        ))
+        (local.set $ret
+          (i64.add 
+            (i64.shl (i64.extend_i32_s (i32.add (local.get $x) (local.get $dx))) (i64.const 32))
+            (i64.extend_i32_s (i32.sub (local.get $y) (local.get $dy)))
           )
+        )
+        (br_if $l (i32.sub (i32.const 1) (local.get $p)))
 
-          (local.set $signed (i32.add (local.get $signed) (i32.const 1)))
-          (br_if $l3 (i32.lt_u (local.get $signed) (i32.const 4)))
-        end
+        ;; - +
+        (local.set $p (call $get_pixel
+          (local.get $w)
+          (i32.sub (local.get $x) (local.get $dx))
+          (i32.add (local.get $y) (local.get $dy))
+        ))
+        (local.set $ret
+          (i64.add 
+            (i64.shl (i64.extend_i32_s (i32.sub (local.get $x) (local.get $dx))) (i64.const 32))
+            (i64.extend_i32_s (i32.add (local.get $y) (local.get $dy)))
+          )
+        )
+        (br_if $l (i32.sub (i32.const 1) (local.get $p)))
+        
+        ;; - -
+        (local.set $p (call $get_pixel
+          (local.get $w)
+          (i32.sub (local.get $x) (local.get $dx))
+          (i32.sub (local.get $y) (local.get $dy))
+        ))
+        (local.set $ret
+          (i64.add 
+            (i64.shl (i64.extend_i32_s (i32.sub (local.get $x) (local.get $dx))) (i64.const 32))
+            (i64.extend_i32_s (i32.sub (local.get $y) (local.get $dy)))
+          )
+        )
+        (br_if $l (i32.sub (i32.const 1) (local.get $p)))
 
         (local.set $dx (i32.add (local.get $dx) (i32.const 1)))
-        (br_if $l2 (i32.le_u (local.get $dx) (local.get $sum)))
+        (br_if $loop_dx (i32.le_u (local.get $dx) (local.get $sum)))
       end
-
-      (local.set $sum (i32.add (local.get $sum) (i32.const 1)))
-      (br_if $l (i32.wrap_i64 (local.get $curr_pos)))
     end
-    (local.get $curr_pos)
+    (local.get $ret)
   )
 
   ;; exported API's

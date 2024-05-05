@@ -1,6 +1,5 @@
 //@ts-ignore
 import * as thinning_wasm from "@/lib/wasm/thinning.wasm";
-import { AStarFinder } from "astar-typescript";
 
 type Image = [number, number, number, number][][];
 type BinaryImage = number[][];
@@ -119,18 +118,18 @@ export async function thinning(im: BinaryImage) {
 
 }
 
+export async function get_closest_black_pixel(w: number, h: number, x: number, y: number) {
+    return <bigint>(await thinning_wasm.closest_black_pixel(x, y, w, h));
+}
+
 export async function skeletonize(im: Uint8ClampedArray, width: number, height: number) {
     const image = reshape_bytes(im, width, height);
     const flatten = bitwise_not(to_binary_image(image));
     
     const thinned = bitwise_not(await thinning(flatten));
     console.log(thinned);
-    const astar_instance = new AStarFinder({
-        grid: {
-            matrix: Array.from(thinned)
-        },
-        heuristic: "Manhattan"
-    });
+
+    return thinned;
     
     // console.log(flatten[181][60], flatten[60][181]);
 }
