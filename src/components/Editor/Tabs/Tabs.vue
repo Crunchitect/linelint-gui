@@ -45,8 +45,8 @@
         </fieldset>
         <button class="hover:bg-base rounded aspect-square w-[1lh]" @click="newtab?.showModal"><i class="fa-solid fa-plus"></i></button>
         <dialog ref="newtab" class="p-4 rounded border-outline border-2">
-            <h1 class="text-primary text-2xl font-extrabold">New Tab</h1>
             <i class="z-10 fa-solid fa-circle-xmark text-red-300 hover:text-red-600 float-right" @click="newtab?.close"></i>
+            <h1 class="text-primary text-2xl font-extrabold">New Tab</h1>
             <button></button>
             <h1 class="text-xl font-bold text-secondary">Main</h1>
             <div class="grid grid-cols-3 grid-rows-2 gap-1 w-[20vw]">

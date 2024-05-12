@@ -106,8 +106,8 @@ export async function thinning(im: BinaryImage) {
             thinning_wasm.set_pixel(image_width, x, y, pixel)
         )
     );
-    thinning_wasm.thinning_zs(image_width, image_height);
-    thinning_wasm.corner_fixing(image_width, image_height);
+    await thinning_wasm.thinning_zs(image_width, image_height);
+    await thinning_wasm.corner_fixing(image_width, image_height);
     return im.map((row, y) =>
         row.map((_, x) => 
             thinning_wasm.get_pixel(image_width, x, y)

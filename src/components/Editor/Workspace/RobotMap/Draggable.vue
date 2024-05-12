@@ -28,7 +28,16 @@
     };
 
     watch(props.bounds, (bounds) => {
-        const { left, top } = bounds;
+        const { left, top, right, bottom } = bounds;
+        const match = movint.value!.style.transform.match(/translate\((\d+)px, (\d+)px\)/g);
+        console.log(match);
+        if (match) {
+            const [el_left, el_top] = match.map(v => Number(v));
+            if ((left <= el_left && el_left <= right) && (top <= el_top && el_top < bottom)) {
+                return;
+            }
+        } 
+        if ((left & top & right & bottom) == 0) return;
         movint.value!.style.transform = ` translate(${left}px, ${top}px) translate(${props.x_offset_percentage ?? -50}%, ${props.y_offset_percentage ?? -50}%)`;
     });
 
@@ -43,9 +52,9 @@
 </script>
 
 <template>
+    <span class="absolute top-0 left-0" ref="movint"><slot></slot></span>
     <KeepAlive>
-        <span class="absolute top-0 left-0" ref="movint"><slot></slot></span>
-        <Moveable :target="movint" :draggable="true" :throttle-drag="1" :hide-default-lines="true" :origin="false"
+    <Moveable :target="movint" :draggable="true" :throttle-drag="1" :hide-default-lines="true" :origin="false"
          @drag="drag_callback" @drag-end="update_pos"
         />
     </KeepAlive>

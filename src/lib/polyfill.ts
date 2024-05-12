@@ -4,9 +4,9 @@ export function filterMutate<T>(arr: T[], cb: (a: T) => boolean) {
     }
 }
 
-export function slidingWindow(arr: any[], size: number) {
-    return arr.reduce((acc: any[], _, i) => {
-        if (i + size == arr.length) return acc;
-        return acc.concat([arr.slice(i, i+3)]);
+export function slidingWindow<T>(arr: T[], size: number) {
+    return arr.reduce((acc: T[][], _, i) => {
+        if (i + size >= arr.length) return acc;
+        return acc.concat([arr.slice(i, i+size)]);
     }, [])
 }
