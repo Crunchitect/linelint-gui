@@ -30,7 +30,6 @@
     watch(props.bounds, (bounds) => {
         const { left, top, right, bottom } = bounds;
         const match = movint.value!.style.transform.match(/translate\((\d+)px, (\d+)px\)/g);
-        console.log(match);
         if (match) {
             const [el_left, el_top] = match.map(v => Number(v));
             if ((left <= el_left && el_left <= right) && (top <= el_top && el_top < bottom)) {

@@ -315,8 +315,8 @@
                   )
                   (call $set_pixel
                     (local.get $w)
-                    (i32.add (local.get $x) (local.get $j))
-                    (i32.add (local.get $y) (local.get $i))
+                    (i32.sub (local.get $x) (local.get $j))
+                    (i32.sub (local.get $y) (local.get $i))
                     (i32.const 0)
                   )
                 )

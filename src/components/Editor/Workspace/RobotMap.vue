@@ -79,6 +79,13 @@ const processImage = async () => {
     // thinned_image.forEach((row, y) => row.forEach((pixel, x) => {
     //     context?.putImageData(new ImageData(new Uint8ClampedArray([pixel * 255, pixel * 255, pixel * 255, 255]), 1, 1), x, y)
     // }))
+
+    // const image = map_canvas.value.toDataURL("image/png");
+    // const aDownloadLink = document.createElement('a');
+    // aDownloadLink.download = 'canvas_image.png';
+    // aDownloadLink.href = image;
+    // aDownloadLink.click();
+
     // console.log("THINNED")
     const path = await findPath(thinned_image);
     drawPath(<AStarPath>path);
